@@ -11,7 +11,7 @@ func main() {
 
 	PrintBoard(board)
 	for !Dead(board) {
-		move := ChooseBestMove(board, 200*time.Millisecond)
+		move := ChooseBestMove(board, 1*time.Second)
 
 		board = MakeMove(board, move)
 
