@@ -22,5 +22,7 @@ func main() {
 
 		fmt.Println("Inserted random tile:")
 		PrintBoard(board)
+
+		fmt.Println("Max Score: ", MAX_SCORE)
 	}
 }
