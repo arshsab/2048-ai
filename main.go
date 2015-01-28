@@ -7,7 +7,7 @@ import (
 
 func main() {
 	// todo: random board
-	var board uint64 = 0x22
+	var board uint64 = 0x11
 
 	PrintBoard(board)
 	for !Dead(board) {

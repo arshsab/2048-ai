@@ -105,7 +105,7 @@ func heuristic(board uint64) int {
 	count := 0
 
 	for {
-		score := 10000000
+		score := -10000.0
 		moved := board
 
 		for _, move := range Moves {
@@ -115,7 +115,7 @@ func heuristic(board uint64) int {
 				continue
 			}
 
-			potentialScore := simpleHeuristic(potential) + simpleHeuristic(Transpose(potential))
+			potentialScore := simpleHeuristic(potential)
 
 			if potentialScore < score {
 				score = potentialScore
@@ -134,25 +134,97 @@ func heuristic(board uint64) int {
 	return count
 }
 
-func simpleHeuristic(board uint64) int {
-	ret := gradeRow(board>>48) + gradeRow((board>>32)&0xffff) + gradeRow((board>>16)&0xffff) + gradeRow(board&0xffff)
+func spaces(board uint64) float64 {
+	mask := uint64(0xf)
+	empties := 0
 
-	return int(ret)
+	for i := 0; i < 16; i++ {
+		if (board & mask) == 0 {
+			empties++
+		}
+
+		mask <<= 4
+	}
+
+	return float64(empties)
 }
 
-func gradeRow(row uint64) int {
-	acc := 0
+func simpleHeuristic(board uint64) float64 {
+	mask := uint64(0xf)
+	empties := 0
 
+	for i := 0; i < 16; i++ {
+		if board&mask == 0 {
+			empties++
+		}
+
+		mask <<= 4
+	}
+
+	ret := gradeRow(board>>48) + gradeRow((board>>32)&0xffff) + gradeRow((board>>16)&0xffff) + gradeRow(board&0xffff)
+
+	return float64(ret) + (2.0 * float64(empties))
+}
+
+func gradeRow(row uint64) float64 {
+	switches := 0
+	magnitude := 0.0
+	stability := 4
+
+	pos := sgn((row>>12)&0xf - (row>>8)&0xf)
 	for i := 3; i > 0; i-- {
-		one := (row >> uint(i*4)) & 0xf
-		two := (row >> uint((i-1)*4)) & 0xf
+		one := (row >> uint((i * 4))) & 0xf
+		two := (row >> uint(((i - 1) * 4))) & 0xf
 
-		if one == 0 || two == 0 {
+		if one == 0 {
+			stability--
 			continue
 		}
 
-		acc += int(one-two) * int(one-two)
+		sign := sgn((one - two))
+
+		if sign != pos {
+			switches++
+		}
+
+		magnitude += float64(one)
 	}
 
-	return acc
+	if (row & 0xf) == 0 {
+		stability--
+	}
+
+	magnitude += float64((row & 0xf))
+
+	return (float64((stability - switches)) * magnitude) + (2.0 * (magnitude / float64((stability + 1))))
+}
+
+func stability(board uint64) float64 {
+	afters := [4]uint64{ShiftUp(board), ShiftDown(board), ShiftLeft(board), ShiftRight(board)}
+	mask := uint64(0xf)
+
+	total := uint64(0)
+
+	for i := 0; i < 16; i++ {
+		tile := (board & mask)
+		val := tile >> uint((4 * i))
+
+		for _, moved := range afters {
+			if (moved & mask) == tile {
+				total += val * val // square for added effect
+			}
+		}
+
+		mask <<= 4
+	}
+
+	return float64(total)
+}
+
+func sgn(s uint64) int {
+	if s < 0 {
+		return -1
+	}
+
+	return 1
 }
