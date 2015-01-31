@@ -15,7 +15,7 @@ type DpEntry struct {
 	score float64
 }
 
-func ChooseBestMove(board uint64, d time.Duration) (best Move) {
+func ChooseBestMove(board uint64, d time.Duration, weights Weights) (best Move) {
 	end := time.Now().Add(d)
 	best = NONE
 
@@ -31,7 +31,7 @@ func ChooseBestMove(board uint64, d time.Duration) (best Move) {
 	for ; ; i++ {
 		stats := Stats{leaves: 0, dp: make(map[uint64]DpEntry)}
 
-		move, score := max(board, 0, i, &stats, end)
+		move, score := max(board, 0, i, &stats, end, weights)
 		best = move
 
 		fmt.Println("Finished Search at depth", i, "with score:", score, "and move:", move)
@@ -41,7 +41,7 @@ func ChooseBestMove(board uint64, d time.Duration) (best Move) {
 	return
 }
 
-func max(board uint64, depth int, limit int, stats *Stats, end time.Time) (Move, float64) {
+func max(board uint64, depth int, limit int, stats *Stats, end time.Time, weights Weights) (Move, float64) {
 	if time.Now().After(end) {
 		panic("Timed out!")
 	}
@@ -49,7 +49,7 @@ func max(board uint64, depth int, limit int, stats *Stats, end time.Time) (Move,
 	if depth >= limit {
 		stats.leaves++
 
-		return NONE, float64(Heuristic(board))
+		return NONE, float64(Heuristic(board, weights))
 	}
 
 	if dpVal, ok := stats.dp[board]; ok && dpVal.depth <= depth {
@@ -66,7 +66,7 @@ func max(board uint64, depth int, limit int, stats *Stats, end time.Time) (Move,
 			continue
 		}
 
-		score := expectation(moved, depth, limit, stats, end)
+		score := expectation(moved, depth, limit, stats, end, weights)
 
 		if score >= bestScore {
 			bestScore = score
@@ -79,7 +79,7 @@ func max(board uint64, depth int, limit int, stats *Stats, end time.Time) (Move,
 	return bestMove, bestScore
 }
 
-func expectation(board uint64, depth int, limit int, stats *Stats, end time.Time) float64 {
+func expectation(board uint64, depth int, limit int, stats *Stats, end time.Time, weights Weights) float64 {
 	empty := 0
 	total := 0.0
 
@@ -88,8 +88,8 @@ func expectation(board uint64, depth int, limit int, stats *Stats, end time.Time
 			board1 := board ^ (0x1 << (i * 4))
 			board2 := board ^ (0x2 << (i * 4))
 
-			_, score1 := max(board1, depth+1, limit, stats, end)
-			_, score2 := max(board2, depth+2, limit, stats, end)
+			_, score1 := max(board1, depth+1, limit, stats, end, weights)
+			_, score2 := max(board2, depth+2, limit, stats, end, weights)
 
 			total += (score1 * .9) + (score2 * .1)
 
