@@ -8,7 +8,7 @@ import (
 	"time"
 )
 
-func mian() {
+func main() {
 	var board uint64 = 0
 
 	board = InsertRandomTile(board)
