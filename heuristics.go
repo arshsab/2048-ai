@@ -37,7 +37,7 @@ func Anneal(eval func(Weights) float64) Weights {
 
 		newScore := eval(newPosition)
 
-		if newScore > currentScore || math.Exp((currentScore-newScore)/temp) < rand.Float64() {
+		if newScore > currentScore || math.Exp(((currentScore-newScore)/temp)) < rand.Float64() {
 			current = newPosition
 			currentScore = newScore
 		}

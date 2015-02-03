@@ -4,11 +4,64 @@ import (
 	"bufio"
 	"encoding/gob"
 	"fmt"
+	"math/rand"
 	"os"
-	"time"
+	"sort"
+	// "time"
 )
 
 func main() {
+	runAi()
+}
+
+func testPositions() {
+	fmt.Println("Loaded.")
+
+	boards := loadPositions()
+
+	fmt.Println("Loaded.")
+
+	for _, board := range boards {
+		total := 0
+
+		arr := []int{}
+
+		for i := 0; i < 10; i++ {
+			score := randomPlay(board)
+			total += score
+
+			arr = append(arr, score)
+
+			fmt.Println("Score", (float64(total) / float64((i + 1))), "iteration", i)
+		}
+
+		sort.Ints(arr)
+
+		fmt.Println(arr)
+	}
+}
+
+func randomPlay(board uint64) int {
+	ret := 0
+
+	for !Dead(board) {
+		move := Moves[rand.Int31n(4)]
+		moved := MakeMove(board, move)
+
+		if moved == board {
+			continue
+		}
+
+		board = InsertRandomTile(moved)
+
+		// fmt.Println(board, ret)
+		ret++
+	}
+
+	return ret
+}
+
+func runAi() {
 	var board uint64 = 0
 
 	board = InsertRandomTile(board)
@@ -20,7 +73,7 @@ func main() {
 	for !Dead(board) {
 		boards = append(boards, board)
 
-		move := ChooseBestMove(board, (50 * time.Millisecond), DEFAULT_WEIGHTS)
+		move := MonteCarloChooseMove(board)
 
 		board = MakeMove(board, move)
 
